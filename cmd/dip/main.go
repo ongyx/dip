@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"runtime"
 	"runtime/debug"
 	"syscall"
 )
@@ -22,7 +21,7 @@ func main() {
 			ver = bi.Main.Version
 		}
 
-		fmt.Printf("dip %s (built with go %s)\n", ver, runtime.Version())
+		fmt.Printf("dip %s\n", ver)
 		os.Exit(0)
 	}
 

@@ -19,6 +19,3 @@
 
 # Go workspace file
 go.work
-
-# CSS assets (downloaded locally, not vendored)
-static/css

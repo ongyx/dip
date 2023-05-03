@@ -3,23 +3,24 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strings"
 )
 
 var (
-	help = fmt.Sprintf(
+	help = strings.ReplaceAll(fmt.Sprintf(
 		`dip: document instant preview for Markdown
-
+        
         usage:
-            dip [options] [<path>] [<address>]
-
+          dip [options] [<path>] [<address>]
+               
         where:
-            path is the file or directory to serve, or '-' for stdin. (default: '%s')
-            address is the TCP address and/or port to listen for requests from. (default: '%s')
-
+          path is the file or directory to serve, or '-' for stdin. (default: '%s')
+          address is the TCP address and/or port to listen for requests from. (default: '%s')
+        
         options:`,
 		args.Path,
 		args.Address,
-	)
+	), "    ", "")
 
 	args = &Args{
 		Path:    ".",
