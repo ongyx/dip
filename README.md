@@ -1,6 +1,6 @@
-# dip
+# Dip
 
-(Markdown) document instant preview.
+(Markdown) Document instant preview.
 
 Inspired by [grip].
 

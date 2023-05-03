@@ -21,7 +21,7 @@ func NewStdin() (*Stdin, error) {
 }
 
 func (s *Stdin) Title(path string) string {
-	return "stdin"
+	return "(stdin)"
 }
 
 func (s *Stdin) Read(path string) ([]byte, error) {
