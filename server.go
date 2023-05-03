@@ -59,9 +59,11 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	if !s.library.Has(path) {
 		if err := s.library.Reload(path); err != nil {
-			s.log.Printf("error: couldn't init document at '%s': %s\n", path, err)
+			s.log.Printf("error: document %s: %s\n", path, err)
+
 			if err == ErrPathNotFound {
 				http.NotFound(w, r)
+			} else {
 			}
 			return
 		}

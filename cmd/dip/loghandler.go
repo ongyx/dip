@@ -3,6 +3,11 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
+)
+
+var (
+	logger = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lmsgprefix)
 )
 
 type LogHandler struct {

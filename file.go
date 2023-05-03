@@ -58,7 +58,7 @@ func (f *File) Reload(queue chan<- string) {
 				return
 			}
 
-			if event.Name == f.path {
+			if event.Name == f.path && event.Has(fsnotify.Write) {
 				queue <- Root
 			}
 		case err, ok := <-f.watcher.Errors:

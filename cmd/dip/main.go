@@ -1,62 +1,41 @@
 package main
 
 import (
-	"flag"
+	"context"
 	"fmt"
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
+	"runtime"
 	"runtime/debug"
-	"strconv"
-
-	"github.com/ongyx/dip"
-)
-
-var (
-	address = flag.String("address", ":8080", "address to host the server at")
-	version = flag.Bool("version", false, "show version of dip")
+	"syscall"
 )
 
 func main() {
-	flag.Parse()
+	args.Parse()
 
-	if *version {
+	if *args.Version {
 		ver := "(how did we get here?)"
+
 		if bi, ok := debug.ReadBuildInfo(); ok {
 			ver = bi.Main.Version
 		}
 
-		fmt.Printf("dip %s\n", ver)
+		fmt.Printf("dip %s (built with go %s)\n", ver, runtime.Version())
 		os.Exit(0)
 	}
 
-	var source dip.Source
-	var err error
-
-	file := flag.Arg(0)
-	if file != "" {
-		source, err = dip.NewFile(file)
-		if err != nil {
-			fmt.Printf("failed to read file %s: %s\n", file, err)
-			os.Exit(1)
-		}
-	} else {
-		source, err = dip.NewStdin()
-		if err != nil {
-			fmt.Println("failed to read stdin:", err)
-			os.Exit(1)
-		}
+	source, err := newSource(args.Path)
+	if err != nil {
+		fmt.Printf("failed to read from %s: %s\n", args.Path, err)
+		os.Exit(1)
 	}
 
-	server := setup(source)
-	mux := &LogHandler{
-		log:     logger,
-		handler: server.Mux(nil),
-	}
+	mux := setupHandler(source)
 
-	addr := *address
-	// address is only the port without a colon, so add it.
-	if _, err := strconv.Atoi(addr); err == nil {
+	addr := args.Address
+	if isPort(addr) {
 		addr = ":" + addr
 	}
 
@@ -66,14 +45,28 @@ func main() {
 		os.Exit(1)
 	}
 
-	// make the hostname localhost so it is a valid URI.
+	// make the host localhost so that the address can open directly in a web browser.
 	if host == "" {
 		host = "localhost"
 	}
 
+	server := &http.Server{Addr: addr, Handler: mux}
+
 	fmt.Printf("listening at http://%s:%s\n", host, port)
 
-	if err := http.ListenAndServe(addr, mux); err != nil {
-		fmt.Printf("server exited - %s\n", err)
+	go func() {
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
+			fmt.Printf("listener: %s\n", err)
+		}
+	}()
+
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	// wait for ctrl+c to shutdown.
+	<-interrupt
+
+	if err := server.Shutdown(context.Background()); err != nil {
+		fmt.Printf("error shutting down server: %s\n", err)
 	}
 }
