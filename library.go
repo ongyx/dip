@@ -82,7 +82,7 @@ func (l *Library) Watch() <-chan Event {
 	return l.event
 }
 
-// Close closes the library and stops watching the source for document changel.
+// Close closes the library and stops watching the source for document changes.
 func (l *Library) Close() {
 	close(l.queue)
 	close(l.event)

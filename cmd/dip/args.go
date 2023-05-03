@@ -8,28 +8,32 @@ import (
 
 var (
 	help = strings.ReplaceAll(fmt.Sprintf(
-		`dip: document instant preview for Markdown
+		`(Markdown) Document instant preview
         
-        usage:
+        Usage:
           dip [options] [<path>] [<address>]
                
-        where:
+        Where:
           path is the file or directory to serve, or '-' for stdin. (default: '%s')
           address is the TCP address and/or port to listen for requests from. (default: '%s')
         
-        options:`,
+        Options:
+          -v, -version  Print dip's version and exit.
+          -h, -help     Print this message and exit.`,
 		args.Path,
 		args.Address,
-	), "    ", "")
+	), "\n        ", "\n")
 
 	args = &Args{
 		Path:    ".",
 		Address: ":8080",
-		Version: flag.Bool("version", false, "show version"),
 	}
 )
 
 func init() {
+	flag.BoolVar(&args.Version, "v", false, "")
+	flag.BoolVar(&args.Version, "version", false, "")
+
 	flag.Usage = args.Usage
 }
 
@@ -37,7 +41,7 @@ type Args struct {
 	Path    string
 	Address string
 
-	Version *bool
+	Version bool
 }
 
 func (a *Args) Parse() {
@@ -56,5 +60,4 @@ func (a *Args) Parse() {
 
 func (a *Args) Usage() {
 	fmt.Fprintln(flag.CommandLine.Output(), help)
-	flag.PrintDefaults()
 }

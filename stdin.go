@@ -2,6 +2,7 @@ package dip
 
 import (
 	"io"
+	"log"
 	"os"
 )
 
@@ -33,3 +34,5 @@ func (s *Stdin) Read(path string) ([]byte, error) {
 }
 
 func (s *Stdin) Reload(queue chan<- string) {}
+
+func (s *Stdin) Log(logger *log.Logger) {}

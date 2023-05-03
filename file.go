@@ -1,40 +1,27 @@
 package dip
 
 import (
-	"log"
-	"os"
 	"path/filepath"
-
-	"github.com/fsnotify/fsnotify"
 )
 
 // File is a source that reads from a single file.
 type File struct {
-	// Logger to log errors to.
-	Log *log.Logger
+	*Directory
 
-	name, path string
-	watcher    *fsnotify.Watcher
+	name string
 }
 
 // NewFile creates a new file source.
+// path must be absolute.
 func NewFile(path string) (*File, error) {
-	path, err := filepath.Abs(path)
+	dir, err := NewDirectory(filepath.Dir(path))
 	if err != nil {
 		return nil, err
 	}
-
-	watcher, err := fsnotify.NewWatcher()
-	if err != nil {
-		return nil, err
-	}
-
-	watcher.Add(filepath.Dir(path))
 
 	return &File{
-		name:    filepath.Base(path),
-		path:    path,
-		watcher: watcher,
+		Directory: dir,
+		name:      filepath.Base(path),
 	}, nil
 }
 
@@ -47,26 +34,21 @@ func (f *File) Read(path string) ([]byte, error) {
 		return nil, ErrPathNotFound
 	}
 
-	return os.ReadFile(f.path)
+	return f.Directory.Read(f.name)
 }
 
 func (f *File) Reload(queue chan<- string) {
-	for {
-		select {
-		case event, ok := <-f.watcher.Events:
-			if !ok {
-				return
-			}
+	// we use another queue to make sure only the file we're interested in is reloaded.
+	dirQueue := make(chan string)
 
-			if event.Name == f.path && event.Has(fsnotify.Write) {
+	go func() {
+		for path := range dirQueue {
+			// drop all other paths
+			if path == f.name {
 				queue <- Root
 			}
-		case err, ok := <-f.watcher.Errors:
-			if !ok {
-				return
-			}
-
-			f.Log.Printf("error: watcher failed: %s\n", err)
 		}
-	}
+	}()
+
+	f.Directory.Reload(dirQueue)
 }

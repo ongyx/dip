@@ -14,7 +14,7 @@ import (
 func main() {
 	args.Parse()
 
-	if *args.Version {
+	if args.Version {
 		ver := "(how did we get here?)"
 
 		if bi, ok := debug.ReadBuildInfo(); ok {
@@ -30,6 +30,8 @@ func main() {
 		fmt.Printf("failed to read from %s: %s\n", args.Path, err)
 		os.Exit(1)
 	}
+
+	source.Log(logger)
 
 	mux := setupHandler(source)
 
@@ -65,7 +67,10 @@ func main() {
 	// wait for ctrl+c to shutdown.
 	<-interrupt
 
+	fmt.Println(" shutting down...")
+
 	if err := server.Shutdown(context.Background()); err != nil {
 		fmt.Printf("error shutting down server: %s\n", err)
+		os.Exit(2)
 	}
 }

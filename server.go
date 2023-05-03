@@ -8,6 +8,10 @@ import (
 	"strings"
 )
 
+var (
+	markdownExtensions = []string{".md", ".markdown"}
+)
+
 // Server serves documents over HTTP.
 type Server struct {
 	library *Library
@@ -57,14 +61,19 @@ func (s *Server) Mux(static fs.FS) *http.ServeMux {
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	path := strings.Trim(r.URL.Path, "/")
 
+	if !isMarkdown(path) && path != Root {
+		http.NotFound(w, r)
+		return
+	}
+
 	if !s.library.Has(path) {
 		if err := s.library.Reload(path); err != nil {
 			s.log.Printf("error: document %s: %s\n", path, err)
 
 			if err == ErrPathNotFound {
 				http.NotFound(w, r)
-			} else {
 			}
+
 			return
 		}
 	}
@@ -79,4 +88,14 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		s.log.Printf("error: wrote only %d bytes to response: %s\n", written, err)
 	}
+}
+
+func isMarkdown(path string) bool {
+	for _, ext := range markdownExtensions {
+		if strings.HasSuffix(path, ext) {
+			return true
+		}
+	}
+
+	return false
 }
