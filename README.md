@@ -31,16 +31,12 @@ You may want to update them periodically with:
 
 ```
 npm update
-go generate ./pkg/static
+npm run build
 ```
 
 ## License
 
 Dip is licensed under the MIT License.
-
-The following resources are vendored in `static/`:
-
-* **[github-markdown-css]** CSS for rendering HTML similarly to Github.
 
 [grip]: https://github.com/joeyespo/grip
 [goldmark]: https://github.com/yuin/goldmark

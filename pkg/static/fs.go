@@ -1,7 +1,5 @@
 package static
 
-//go:generate npx esbuild ../../src/index.js --bundle --outdir=dist
-
 import (
 	"embed"
 )
