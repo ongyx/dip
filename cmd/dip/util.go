@@ -3,7 +3,9 @@ package main
 import (
 	"net/http"
 	"os"
+	"os/signal"
 	"strconv"
+	"syscall"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
@@ -15,8 +17,24 @@ import (
 )
 
 var (
-	static = "__"
+	markdown = goldmark.New(
+		goldmark.WithExtensions(extension.GFM),
+		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
+	)
 )
+
+func newHandler(path string) (http.Handler, error) {
+	src, err := newSource(path)
+	if err != nil {
+		return nil, err
+	}
+
+	library := document.NewLibrary(src, markdown)
+	server := web.NewServer(library, logger)
+	mux := server.Mux(nil)
+
+	return &LogHandler{logger: logger, handler: mux}, err
+}
 
 func newSource(path string) (source.Source, error) {
 	var scheme string
@@ -39,22 +57,14 @@ func newSource(path string) (source.Source, error) {
 	return source.New(scheme + "://" + path)
 }
 
-func setupHandler(src source.Source) http.Handler {
-	md := goldmark.New(
-		goldmark.WithExtensions(extension.GFM),
-		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
-	)
-	library := document.NewLibrary(src, md)
-
-	server := web.NewServer(library, logger)
-
-	return &LogHandler{
-		log:     logger,
-		handler: server.Mux(nil),
-	}
-}
-
 func isPort(addr string) bool {
 	_, err := strconv.Atoi(addr)
 	return err == nil
+}
+
+func wait() {
+	interrupt := make(chan os.Signal, 1)
+	signal.Notify(interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
+
+	<-interrupt
 }

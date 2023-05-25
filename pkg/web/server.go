@@ -10,6 +10,7 @@ import (
 	"github.com/ongyx/dip/pkg/document"
 	"github.com/ongyx/dip/pkg/source"
 	"github.com/ongyx/dip/pkg/static"
+	tmpl "github.com/ongyx/dip/pkg/template"
 )
 
 const (
@@ -85,7 +86,7 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// SAFETY: d is guaranteed to be non-nil
 	d := s.library.Get(path)
 	d.Borrow(func(content string) {
-		dt := &static.DocumentTemplate{
+		dt := &tmpl.Document{
 			Title:   d.Title(),
 			Static:  staticPath,
 			Content: template.HTML(content),

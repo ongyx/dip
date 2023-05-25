@@ -1,6 +1,6 @@
 package static
 
-//go:generate curl https://raw.githubusercontent.com/sindresorhus/github-markdown-css/main/github-markdown.css -o css/github.css
+//go:generate npx esbuild ../../src/index.js --bundle --outdir=dist
 
 import (
 	"embed"
@@ -9,6 +9,6 @@ import (
 var (
 	// FS is the default filesystem for the server's static resources.
 	//
-	//go:embed css
+	//go:embed dist
 	FS embed.FS
 )

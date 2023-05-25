@@ -27,14 +27,12 @@ var (
 	args = &Args{
 		Path:    ".",
 		Address: ":8080",
+		Flags:   flag.CommandLine,
 	}
 )
 
 func init() {
-	flag.BoolVar(&args.Version, "v", false, "")
-	flag.BoolVar(&args.Version, "version", false, "")
-
-	flag.Usage = args.Usage
+	args.Define()
 }
 
 type Args struct {
@@ -42,22 +40,29 @@ type Args struct {
 	Address string
 
 	Version bool
+
+	Flags *flag.FlagSet
+}
+
+func (a *Args) Define() {
+	a.Flags.BoolVar(&args.Version, "v", false, "")
+	a.Flags.BoolVar(&args.Version, "version", false, "")
+
+	a.Flags.Usage = args.Usage
 }
 
 func (a *Args) Parse() {
 	flag.Parse()
 
-	path := flag.Arg(0)
-	if path != "" {
+	if path := flag.Arg(0); path != "" {
 		a.Path = path
 	}
 
-	address := flag.Arg(1)
-	if address != "" {
+	if address := flag.Arg(1); address != "" {
 		a.Address = address
 	}
 }
 
 func (a *Args) Usage() {
-	fmt.Fprintln(flag.CommandLine.Output(), help)
+	fmt.Fprintln(a.Flags.Output(), help)
 }

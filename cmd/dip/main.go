@@ -6,9 +6,7 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"os/signal"
 	"runtime/debug"
-	"syscall"
 )
 
 func main() {
@@ -25,53 +23,46 @@ func main() {
 		os.Exit(0)
 	}
 
-	source, err := newSource(args.Path)
-	if err != nil {
-		fmt.Printf("failed to read from %s: %s\n", args.Path, err)
-		os.Exit(1)
-	}
-
-	mux := setupHandler(source)
-
 	addr := args.Address
 	if isPort(addr) {
+		// since it's a standalone port, make it into a proper TCP address
 		addr = ":" + addr
 	}
 
 	host, port, err := net.SplitHostPort(addr)
 	if err != nil {
-		fmt.Printf("failed to parse address %s: %s\n", addr, err)
+		fmt.Printf("error: failed to parse address %s: %s\n", addr, err)
 		os.Exit(1)
 	}
 
-	// make the host localhost so that the address can open directly in a web browser.
 	if host == "" {
-		host = "localhost"
+		host = "127.0.0.1"
 	}
 
-	server := &http.Server{
-		Addr:    addr,
-		Handler: mux,
+	handler, err := newHandler(args.Path)
+	if err != nil {
+		fmt.Printf("error: failed to setup server: %s\n", err)
+		os.Exit(2)
 	}
 
-	fmt.Printf("listening at http://%s:%s\n", host, port)
+	server := &http.Server{Addr: addr, Handler: handler}
+
+	fmt.Printf("serving %s at http://%s:%s\n", args.Path, host, port)
 
 	go func() {
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
-			fmt.Printf("listener: %s\n", err)
+			fmt.Printf("error: listener: %s\n", err)
+			os.Exit(3)
 		}
 	}()
 
-	interrupt := make(chan os.Signal, 1)
-	signal.Notify(interrupt, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
-
 	// wait for ctrl+c to shutdown.
-	<-interrupt
+	wait()
 
 	fmt.Println(" shutting down...")
 
 	if err := server.Shutdown(context.Background()); err != nil {
-		fmt.Printf("error shutting down server: %s\n", err)
-		os.Exit(2)
+		fmt.Printf("error: shutdown: %s\n", err)
+		os.Exit(3)
 	}
 }

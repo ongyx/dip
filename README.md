@@ -22,6 +22,18 @@ The default is equivalent to `dip . 8080`, which serves the current directory at
 go install github.com/ongyx/dip/cmd/dip@latest
 ```
 
+## Development
+
+Dip uses Go for the backend server and Node.js for the frontend CSS/JS served to clients.
+
+For ease of installation, the bundled assets are checked into this repository under `pkg/static/dist`.
+You may want to update them periodically with:
+
+```
+npm update
+go generate ./pkg/static
+```
+
 ## License
 
 Dip is licensed under the MIT License.
