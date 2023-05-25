@@ -31,8 +31,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	source.Log(logger)
-
 	mux := setupHandler(source)
 
 	addr := args.Address
@@ -51,7 +49,10 @@ func main() {
 		host = "localhost"
 	}
 
-	server := &http.Server{Addr: addr, Handler: mux}
+	server := &http.Server{
+		Addr:    addr,
+		Handler: mux,
+	}
 
 	fmt.Printf("listening at http://%s:%s\n", host, port)
 

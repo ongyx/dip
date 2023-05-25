@@ -1,6 +1,6 @@
 //go:build debug
 
-package dip
+package web
 
 import (
 	_ "net/http/pprof"
