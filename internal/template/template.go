@@ -14,9 +14,9 @@ var (
 )
 
 type Document struct {
-	Title   string
-	Static  string
-	Content template.HTML
+	Title    string
+	Endpoint string
+	Content  template.HTML
 }
 
 func (dt *Document) Execute(w io.Writer) error {

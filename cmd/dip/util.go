@@ -11,9 +11,9 @@ import (
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/parser"
 
-	"github.com/ongyx/dip/pkg/document"
-	"github.com/ongyx/dip/pkg/source"
-	"github.com/ongyx/dip/pkg/web"
+	"github.com/ongyx/dip/internal/document"
+	"github.com/ongyx/dip/internal/source"
+	"github.com/ongyx/dip/internal/web"
 )
 
 var (
