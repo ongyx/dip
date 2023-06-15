@@ -59,7 +59,7 @@ func main() {
 	// wait for ctrl+c to shutdown.
 	wait()
 
-	fmt.Println(" shutting down...")
+	fmt.Println("shutting down...")
 
 	if err := server.Shutdown(context.Background()); err != nil {
 		fmt.Printf("error: shutdown: %s\n", err)

@@ -30,10 +30,10 @@ func newHandler(path string) (http.Handler, error) {
 	}
 
 	library := document.NewLibrary(src, markdown)
-	server := web.NewServer(library, logger)
-	mux := server.Mux(nil)
+	handler := document.NewHandler(library, logger)
+	server := web.NewServer(handler)
 
-	return &LogHandler{logger: logger, handler: mux}, err
+	return &LogHandler{logger: logger, handler: server}, nil
 }
 
 func newSource(path string) (source.Source, error) {

@@ -4,7 +4,7 @@ import (
 	"io"
 	"log"
 
-	"github.com/ongyx/dip/pkg/source"
+	"github.com/ongyx/dip/internal/source"
 	"github.com/yuin/goldmark"
 )
 

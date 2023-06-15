@@ -2,13 +2,14 @@ package asset
 
 import (
 	"embed"
-	"io/fs"
+	"net/http"
 )
 
 var (
-	//go:embed dist
-	filesystem embed.FS
-
 	// FS is the default filesystem for the server's assets.
-	FS, _ = fs.Sub(filesystem, "dist")
+	//go:embed dist
+	FS embed.FS
+
+	// FileServer handles asset requests.
+	FileServer = http.FileServer(http.FS(FS))
 )
