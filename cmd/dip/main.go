@@ -39,30 +39,31 @@ func main() {
 		host = "127.0.0.1"
 	}
 
-	handler, err := newHandler(args.Path)
+	srv, err := createServer(args.Path)
 	if err != nil {
 		fmt.Printf("error: failed to setup server: %s\n", err)
 		os.Exit(2)
 	}
 
-	server := &http.Server{Addr: addr, Handler: handler}
-
-	fmt.Printf("serving %s at http://%s:%s\n", args.Path, host, port)
-
+	hsrv := &http.Server{Addr: addr, Handler: wrapServer(srv)}
 	go func() {
-		if err := server.ListenAndServe(); err != http.ErrServerClosed {
-			fmt.Printf("error: listener: %s\n", err)
-			os.Exit(3)
+		if err := hsrv.ListenAndServe(); err != http.ErrServerClosed {
+			fmt.Printf("error: listen: %s\n", err)
 		}
 	}()
+
+	fmt.Printf("serving %s at http://%s:%s\n", args.Path, host, port)
 
 	// wait for ctrl+c to shutdown.
 	wait()
 
 	fmt.Println("shutting down...")
 
-	if err := server.Shutdown(context.Background()); err != nil {
+	if err := srv.Close(); err != nil {
+		fmt.Printf("error: close: %s\n", err)
+	}
+
+	if err := hsrv.Shutdown(context.Background()); err != nil {
 		fmt.Printf("error: shutdown: %s\n", err)
-		os.Exit(3)
 	}
 }

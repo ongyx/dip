@@ -37,12 +37,11 @@ func NewDirectory(path string) (Source, error) {
 }
 
 func (d *Directory) Open(path string) (fs.File, error) {
-	if path == "." {
-		// special case: the root always redirects to README.md
-		path = "README.md"
-	}
-
 	return d.fs.Open(path)
+}
+
+func (d *Directory) Root() string {
+	return "README.md"
 }
 
 func (d *Directory) Watch(files chan<- string, errors chan<- error) {
@@ -56,6 +55,7 @@ func (d *Directory) Watch(files chan<- string, errors chan<- error) {
 			if IsMarkdownFile(event.Name) && event.Has(fsnotify.Write) {
 				// SAFETY: event.Name is never outside of d.path
 				rel, _ := filepath.Rel(d.path, event.Name)
+
 				files <- rel
 			}
 		case err, ok := <-d.watcher.Errors:

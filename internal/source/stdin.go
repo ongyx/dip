@@ -5,14 +5,19 @@ import (
 	"os"
 )
 
+const (
+	stdinFilename = "(stdin)"
+)
+
 // Stdin is a source that reads from standard input.
 type Stdin struct {
 	file *VirtualFile
 }
 
 // NewStdin creates a new standard input source.
+// The path is ignored.
 func NewStdin(_ string) (Source, error) {
-	vf := NewVirtualFile("(stdin)")
+	vf := NewVirtualFile(stdinFilename)
 
 	if _, err := vf.ReadFrom(os.Stdin); err != nil {
 		return nil, err
@@ -29,12 +34,16 @@ func (s *Stdin) Open(name string) (fs.File, error) {
 		return nil, err
 	}
 
-	if name != Root {
+	if name != stdinFilename {
 		err.Err = fs.ErrNotExist
 		return nil, err
 	}
 
 	return s.file, nil
+}
+
+func (s *Stdin) Root() string {
+	return stdinFilename
 }
 
 func (s *Stdin) Watch(files chan<- string, errors chan<- error) {}

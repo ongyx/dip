@@ -10,7 +10,8 @@
   "author": "Ong Yong Xin",
   "license": "ISC",
   "dependencies": {
-    "github-markdown-css": "^5.2.0"
+    "github-markdown-css": "^5.2.0",
+    "node-snackbar": "^0.1.16"
   },
   "devDependencies": {
     "esbuild": "0.17.19",

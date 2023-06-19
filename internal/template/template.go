@@ -16,6 +16,7 @@ var (
 type Document struct {
 	Title     string
 	AssetPath string
+	Metadata  template.JS
 	Content   template.HTML
 }
 

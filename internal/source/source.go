@@ -7,9 +7,6 @@ import (
 )
 
 var (
-	// Root represents the root of a source filesystem.
-	Root = "."
-
 	// ErrSourceNotFound is returned by New() when the source was not found by the scheme.
 	ErrSourceNotFound = errors.New("source not found")
 )
@@ -17,6 +14,9 @@ var (
 // Source represents a filesystem with Markdown files.
 type Source interface {
 	fs.FS
+
+	// Root returns the path that should be opened in lieu of the root path (i.e., / redirects to README.md).
+	Root() string
 
 	// Watch watches the filesystem for changes to Markdown files, sending their paths over the channel files.
 	// Errors should be sent over the channel errors.

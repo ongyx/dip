@@ -10,6 +10,7 @@ import (
 
 // File is a source that reads from a single file.
 type File struct {
+	base    string
 	path    string
 	watcher *fsnotify.Watcher
 }
@@ -29,17 +30,30 @@ func NewFile(path string) (Source, error) {
 	watcher.Add(filepath.Dir(path))
 
 	return &File{
+		base:    filepath.Base(path),
 		path:    path,
 		watcher: watcher,
 	}, nil
 }
 
 func (f *File) Open(path string) (fs.File, error) {
-	if path == Root {
-		return os.Open(path)
+	err := &fs.PathError{Op: "open", Path: path}
+
+	if !fs.ValidPath(path) {
+		err.Err = fs.ErrInvalid
+		return nil, err
 	}
 
-	return nil, &fs.PathError{Op: "open", Path: path, Err: fs.ErrNotExist}
+	if path != f.base {
+		err.Err = fs.ErrNotExist
+		return nil, err
+	}
+
+	return os.Open(path)
+}
+
+func (f *File) Root() string {
+	return f.base
 }
 
 func (f *File) Watch(files chan<- string, errors chan<- error) {
@@ -51,7 +65,7 @@ func (f *File) Watch(files chan<- string, errors chan<- error) {
 			}
 
 			if event.Name == f.path && event.Has(fsnotify.Write) {
-				files <- Root
+				files <- f.base
 			}
 		case err, ok := <-f.watcher.Errors:
 			if !ok {

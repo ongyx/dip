@@ -1,23 +1,22 @@
-import "github-markdown-css/github-markdown.css";
+import "./asset";
 
 import { Handler } from "./handler";
-import { parseMetadata } from "./metadata";
+import { newMetadata } from "./metadata";
 
 const main = () => {
-  const metadata = parseMetadata();
+  const metadata = newMetadata();
   if (metadata === null) {
     console.log("error: failed to read document metadata");
     return;
   }
 
-  const eventUrl = `${metadata.path.asset}/events?stream=${metadata.path.document}`;
+  console.log(`connecting to SSE...`);
 
-  console.log(`connecting to SSE via ${eventUrl}`);
-
-  const handler = new Handler(eventUrl);
-  handler.listen();
+  const handler = new Handler(metadata);
 
   console.log(`SSE connected!`);
+
+  handler.listen();
 };
 
 window.onload = main;

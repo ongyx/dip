@@ -1,54 +1,58 @@
 package document
 
-import "sync"
+import (
+	"sync"
+)
 
-// Index is a map of file paths to documents.
+// Index is a concurrent-safe map of paths to documents.
 type Index struct {
 	mu   sync.RWMutex
-	docs map[string]*Document
+	docs map[string]*document
 }
 
 // NewIndex creates a new index.
 func NewIndex() *Index {
-	return &Index{docs: make(map[string]*Document)}
+	return &Index{docs: make(map[string]*document)}
 }
 
-// Add creates a new document in the index.
-// If the file path exists, the existing document is returned.
-func (idx *Index) Add(file string) *Document {
-	idx.mu.Lock()
-	defer idx.mu.Unlock()
+// Add adds a new document to the index.
+// exists is true if the path was already added.
+func (i *Index) Add(path string) (exists bool) {
+	i.mu.Lock()
+	defer i.mu.Unlock()
 
-	d, ok := idx.docs[file]
+	_, ok := i.docs[path]
 	if !ok {
-		d = &Document{}
-		idx.docs[file] = d
+		i.docs[path] = &document{doc: &Document{}}
 	}
 
-	return d
-}
-
-// Has checks if the index contains the file path.
-func (idx *Index) Has(file string) bool {
-	idx.mu.RLock()
-	defer idx.mu.RUnlock()
-
-	_, ok := idx.docs[file]
 	return ok
 }
 
-// Get returns the document mapped to the file path.
-func (idx *Index) Get(file string) *Document {
-	idx.mu.RLock()
-	defer idx.mu.RUnlock()
-
-	return idx.docs[file]
+// Has checks if the index has a document.
+func (i *Index) Has(path string) (exists bool) {
+	_, ok := i.docs[path]
+	return ok
 }
 
-// Remove deletes the document mapped to the file path.
-func (idx *Index) Remove(file string) {
-	idx.mu.Lock()
-	defer idx.mu.Unlock()
+// Borrow borrows a document from the index.
+// The document must not be retained outside of fn.
+func (i *Index) Borrow(path string, fn func(d *Document) error) error {
+	i.mu.RLock()
+	defer i.mu.RUnlock()
 
-	delete(idx.docs, file)
+	return fn(i.docs[path].doc)
+}
+
+// Remove removes a document from the index.
+func (i *Index) Remove(path string) {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+
+	delete(i.docs, path)
+}
+
+type document struct {
+	mu  sync.Mutex
+	doc *Document
 }

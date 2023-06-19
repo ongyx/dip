@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 	"os/signal"
@@ -23,20 +24,21 @@ var (
 	)
 )
 
-func newHandler(path string) (http.Handler, error) {
-	src, err := newSource(path)
+func wrapServer(h http.Handler) http.Handler {
+	return web.H2Cify(&LogHandler{handler: h, logger: logger})
+}
+
+func createServer(path string) (*web.Server, error) {
+	src, err := parseSource(path)
 	if err != nil {
 		return nil, err
 	}
 
-	library := document.NewLibrary(src, markdown)
-	handler := document.NewHandler(library, logger)
-	server := web.NewServer(handler)
-
-	return &LogHandler{logger: logger, handler: server}, nil
+	lib := document.NewLibrary(src, markdown)
+	return web.NewServer(lib, logger), nil
 }
 
-func newSource(path string) (source.Source, error) {
+func parseSource(path string) (source.Source, error) {
 	var scheme string
 
 	if path == "-" {
@@ -54,7 +56,10 @@ func newSource(path string) (source.Source, error) {
 		}
 	}
 
-	return source.New(scheme + "://" + path)
+	uri := scheme + "://" + path
+	fmt.Printf("opening '%s'\n", uri)
+
+	return source.New(uri)
 }
 
 func isPort(addr string) bool {

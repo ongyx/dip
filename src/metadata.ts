@@ -5,7 +5,7 @@ export type Metadata = {
   };
 };
 
-export const parseMetadata = (): Metadata | null => {
+export const newMetadata = (): Metadata | null => {
   const raw = document.querySelector("script[id=metadata]")!.textContent;
 
   if (raw !== null) {

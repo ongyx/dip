@@ -2,10 +2,10 @@ package document
 
 import (
 	"io"
-	"log"
+
+	"github.com/yuin/goldmark"
 
 	"github.com/ongyx/dip/internal/source"
-	"github.com/yuin/goldmark"
 )
 
 // Library is an index of documents backed by a source.
@@ -15,18 +15,17 @@ type Library struct {
 	src source.Source
 	md  goldmark.Markdown
 
-	files  chan string
-	errors chan error
-
+	files    chan string
+	errors   chan error
 	watching bool
 }
 
 // NewLibrary creates a new library with the given source and Markdown converter.
 func NewLibrary(src source.Source, md goldmark.Markdown) *Library {
 	l := &Library{
-		Index:  NewIndex(),
 		src:    src,
 		md:     md,
+		Index:  NewIndex(),
 		files:  make(chan string),
 		errors: make(chan error),
 	}
@@ -34,7 +33,12 @@ func NewLibrary(src source.Source, md goldmark.Markdown) *Library {
 	return l
 }
 
-// Reload refreshes the content of a document given its file path.
+// Root returns the path that should be opened instead of the root path.
+func (l *Library) Root() string {
+	return l.src.Root()
+}
+
+// Reload refreshes the content of a document at path and returns the document.
 func (l *Library) Reload(file string) error {
 	f, err := l.src.Open(file)
 	if err != nil {
@@ -47,52 +51,50 @@ func (l *Library) Reload(file string) error {
 		return err
 	}
 
-	d := l.Index.Add(file)
+	l.Index.Add(file)
 
-	// use file name as document title
-	if d.title == "" {
-		fi, err := f.Stat()
-		if err != nil {
-			return err
+	return l.Index.Borrow(file, func(d *Document) error {
+		if d.Title == "" {
+			fi, err := f.Stat()
+			if err != nil {
+				return err
+			}
+
+			// use file name as document title
+			d.Title = fi.Name()
 		}
 
-		d.title = fi.Name()
-	}
-
-	return d.Convert(text, l.md)
+		return d.Convert(text, l.md)
+	})
 }
 
-// Watch begins watching the library's source for changes.
-// Errors are logged with the given logger.
-func (l *Library) Watch(logger *log.Logger) {
-	if l.watching {
-		return
+// Watch watches the library's source for changes to files and reloads them.
+// The paths of files reloaded and any errors are sent over the respective channels.
+func (l *Library) Watch() (files <-chan string, errors <-chan error) {
+	if !l.watching {
+		changed := make(chan string)
+
+		go func() {
+			for file := range changed {
+				// only reload file if its already in the library
+				if !l.Index.Has(file) {
+					continue
+				}
+
+				if err := l.Reload(file); err != nil {
+					l.errors <- err
+				} else {
+					l.files <- file
+				}
+			}
+		}()
+
+		go l.src.Watch(changed, l.errors)
+
+		l.watching = true
 	}
 
-	go func() {
-		for file := range l.files {
-			// only reload file if its already in the library
-			if !l.Index.Has(file) {
-				continue
-			}
-
-			if err := l.Reload(file); err != nil {
-				l.errors <- err
-			} else {
-				logger.Printf("reloaded %s", file)
-			}
-		}
-	}()
-
-	go func() {
-		for err := range l.errors {
-			logger.Printf("error: library: %s\n", err)
-		}
-	}()
-
-	go l.src.Watch(l.files, l.errors)
-
-	l.watching = true
+	return l.files, l.errors
 }
 
 // Close closes the library.
