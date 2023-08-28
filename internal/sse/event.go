@@ -11,7 +11,7 @@ import (
 
 const (
 	// EOL is the end-of-line character for fields and events.
-	EOL = "\n"
+	EOL byte = '\n'
 )
 
 // Event represents a server-sent event.
@@ -27,8 +27,8 @@ type Event struct {
 	// Listeners for this specific type can be dispatched client side to process the event.
 	Type string
 
-	// Data is the event's text content.
-	Data string
+	// Data is the event's content.
+	Data []byte
 
 	// ID is a unique identifier for the event.
 	ID string
@@ -44,43 +44,48 @@ type Event struct {
 }
 
 // Marshal returns the stream respresentation of the event.
-func (e *Event) Marshal() []byte {
-	var buf bytes.Buffer
+// If buf is not nil, the event is marshaled into the existing buffer.
+func (e *Event) Marshal(buf *bytes.Buffer) []byte {
+	if buf == nil {
+		buf = new(bytes.Buffer)
+	} else {
+		buf.Reset()
+	}
 
 	if e.Comment != "" {
 		// escape newlines in comment anyway
-		for _, line := range strings.Split(e.Comment, EOL) {
-			marshal("", line, &buf)
+		for _, line := range strings.Split(e.Comment, string(EOL)) {
+			marshal(buf, "", line)
 		}
 	}
 
 	if e.Type != "" {
-		marshal("event", e.Type, &buf)
+		marshal(buf, "event", e.Type)
 	}
 
-	if e.Data != "" {
+	if len(e.Data) > 0 {
 		if e.Raw {
-			marshal("data", e.Data, &buf)
+			marshal(buf, "data", e.Data)
 		} else {
-			for _, line := range strings.Split(e.Data, EOL) {
-				marshal("data", line, &buf)
+			for _, line := range bytes.Split(e.Data, []byte{EOL}) {
+				marshal(buf, "data", line)
 			}
 		}
 	}
 
 	if e.ID != "" {
-		marshal("id", e.ID, &buf)
+		marshal(buf, "id", e.ID)
 	}
 
 	if e.Retry != 0 {
-		marshal("retry", strconv.FormatInt(e.Retry.Milliseconds(), 10), &buf)
+		marshal(buf, "retry", strconv.FormatInt(e.Retry.Milliseconds(), 10))
 	}
 
-	buf.WriteString(EOL)
+	buf.WriteByte(EOL)
 
 	return buf.Bytes()
 }
 
-func marshal(field, value string, w io.Writer) {
-	fmt.Fprintf(w, "%s: %s" + EOL, field, value)
+func marshal(w io.Writer, field string, value any) {
+	fmt.Fprintf(w, "%s: %s%c", field, value, EOL)
 }

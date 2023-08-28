@@ -15,7 +15,7 @@ type Server struct {
 	lib *document.Library
 	log *log.Logger
 
-	sse *sse.Server
+	sse *sse.Stream
 	mux *http.ServeMux
 }
 
@@ -25,7 +25,7 @@ func NewServer(lib *document.Library, lg *log.Logger) *Server {
 		lib: lib,
 		log: lg,
 
-		sse: sse.NewServer(),
+		sse: sse.NewStream(),
 		mux: http.NewServeMux(),
 	}
 	go s.watch(lib)
@@ -38,7 +38,7 @@ func NewServer(lib *document.Library, lg *log.Logger) *Server {
 	s.mux.Handle(ap, http.StripPrefix(ap, asset.FileServer))
 
 	// server-sent events
-	s.mux.HandleFunc(ap+"events", s.handleSSE)
+	s.mux.Handle(ap+"events", s.sse)
 
 	return s
 }
@@ -51,12 +51,6 @@ func (s *Server) Close() error {
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.mux.ServeHTTP(w, r)
-}
-
-func (s *Server) handleSSE(w http.ResponseWriter, r *http.Request) {
-	if err := s.sse.Recieve(w, r); err != nil {
-		s.log.Printf("error: sse: %s\n", err)
-	}
 }
 
 func (s *Server) watch(lib *document.Library) {
@@ -95,9 +89,12 @@ func (s *Server) send(file string) {
 			return err
 		}
 
-		var e sse.Event
-
-		s.sse.Send(e.Type(file).Data(b))
+		s.sse.Send(
+			&sse.Event{
+				Type: file,
+				Data: b,
+			},
+		)
 
 		return nil
 	})

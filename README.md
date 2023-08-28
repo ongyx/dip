@@ -22,7 +22,7 @@ The default is equivalent to `dip . 8080`, which serves the current directory at
 ## Installation
 
 ```
-go install github.com/ongyx/dip/cmd/dip@latest
+go install github.com/ongyx/dip@latest
 ```
 
 ## Development

@@ -23,12 +23,12 @@ const (
 // Handler wraps a library to serve documents over HTTP.
 type Handler struct {
 	lib *Library
-	sse *sse.Server
+	sse *sse.Stream
 	log *log.Logger
 }
 
 // NewHandler creates a new handler that serves documents from the given library.
-func NewHandler(lib *Library, sse *sse.Server, lg *log.Logger) *Handler {
+func NewHandler(lib *Library, sse *sse.Stream, lg *log.Logger) *Handler {
 	return &Handler{
 		lib: lib,
 		sse: sse,

@@ -1,6 +1,7 @@
 package sse
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"net/http"
@@ -32,8 +33,11 @@ func NewStream() *Stream {
 	}
 
 	go func() {
+		// Cache for marshalling events
+		var buf bytes.Buffer
+
 		for e := range s.events {
-			s.send(e)
+			s.send(e, &buf)
 		}
 	}()
 
@@ -83,11 +87,11 @@ func (s *Stream) Close() {
 	close(s.Errors)
 }
 
-func (s *Stream) send(e *Event) {
+func (s *Stream) send(e *Event, buf *bytes.Buffer) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	buf := e.Marshal()
+	marshal := e.Marshal(buf)
 
 	for ctx, marshaled := range s.clients {
 		select {
@@ -96,7 +100,7 @@ func (s *Stream) send(e *Event) {
 			delete(s.clients, ctx)
 
 		default:
-			marshaled <- buf
+			marshaled <- marshal
 		}
 	}
 }
