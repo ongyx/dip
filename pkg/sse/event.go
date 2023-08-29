@@ -43,47 +43,38 @@ type Event struct {
 	Raw bool
 }
 
-// Marshal returns the stream respresentation of the event.
-// If buf is not nil, the event is marshaled into the existing buffer.
-func (e *Event) Marshal(buf *bytes.Buffer) []byte {
-	if buf == nil {
-		buf = new(bytes.Buffer)
-	} else {
-		buf.Reset()
-	}
-
+// Marshal writes the stream respresentation of the event to the writer.
+func (e *Event) Marshal(w io.Writer) {
 	if e.Comment != "" {
 		// escape newlines in comment anyway
 		for _, line := range strings.Split(e.Comment, string(EOL)) {
-			marshal(buf, "", line)
+			marshal(w, "", line)
 		}
 	}
 
 	if e.Type != "" {
-		marshal(buf, "event", e.Type)
+		marshal(w, "event", e.Type)
 	}
 
 	if len(e.Data) > 0 {
 		if e.Raw {
-			marshal(buf, "data", e.Data)
+			marshal(w, "data", e.Data)
 		} else {
 			for _, line := range bytes.Split(e.Data, []byte{EOL}) {
-				marshal(buf, "data", line)
+				marshal(w, "data", line)
 			}
 		}
 	}
 
 	if e.ID != "" {
-		marshal(buf, "id", e.ID)
+		marshal(w, "id", e.ID)
 	}
 
 	if e.Retry != 0 {
-		marshal(buf, "retry", strconv.FormatInt(e.Retry.Milliseconds(), 10))
+		marshal(w, "retry", strconv.FormatInt(e.Retry.Milliseconds(), 10))
 	}
 
-	buf.WriteByte(EOL)
-
-	return buf.Bytes()
+	w.Write([]byte{EOL})
 }
 
 func marshal(w io.Writer, field string, value any) {

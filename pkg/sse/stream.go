@@ -91,7 +91,8 @@ func (s *Stream) send(e *Event, buf *bytes.Buffer) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 
-	marshal := e.Marshal(buf)
+	buf.Reset()
+	e.Marshal(buf)
 
 	for ctx, marshaled := range s.clients {
 		select {
@@ -100,7 +101,7 @@ func (s *Stream) send(e *Event, buf *bytes.Buffer) {
 			delete(s.clients, ctx)
 
 		default:
-			marshaled <- marshal
+			marshaled <- buf.Bytes()
 		}
 	}
 }
