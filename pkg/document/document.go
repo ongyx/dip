@@ -21,6 +21,15 @@ func NewDocument(md goldmark.Markdown) *Document {
 	return &Document{md: md}
 }
 
+// Borrow temporarily borrows the document's HTML for the lifetime of fn.
+// buf must not be mutated or used outside of fn.
+func (d *Document) Borrow(fn func(buf []byte) error) error {
+	d.mu.RLock()
+	defer d.mu.RUnlock()
+
+	return fn(d.buf.Bytes())
+}
+
 // ReaderFrom reads Markdown text from the reader and converts it into the document as HTML.
 func (d *Document) ReadFrom(r io.Reader) (n int64, err error) {
 	d.mu.Lock()
@@ -33,6 +42,8 @@ func (d *Document) ReadFrom(r io.Reader) (n int64, err error) {
 	if err != io.EOF {
 		return n, err
 	}
+
+	d.buf.Reset()
 
 	if err = d.md.Convert(buf.Bytes(), &d.buf); err != nil {
 		return n, err

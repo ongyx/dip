@@ -6,33 +6,27 @@ import (
 	"time"
 )
 
-// VirtualFile is a fs.File implementation that wraps a byte slice.
+// VirtualFile is a fs.File implementation that wraps a buffer.
 type VirtualFile struct {
-	buf *bytes.Buffer
-	vfi *VirtualFileInfo
+	bytes.Buffer
+
+	name    string
+	modtime time.Time
 }
 
-// NewVirtualFile creates a new virtual file with the given byte slice and name.
-// The byte slice must not be modified afterwards.
-func NewVirtualFile(data []byte, name string) *VirtualFile {
-	return &VirtualFile{
-		buf: bytes.NewBuffer(data),
-		vfi: &VirtualFileInfo{
-			name:    name,
-			size:    int64(len(data)),
-			modtime: time.Now(),
-		},
-	}
+// NewVirtualFile creates a new virtual file with the given name.
+func NewVirtualFile(name string) *VirtualFile {
+	return &VirtualFile{name: name}
 }
 
-func (f *VirtualFile) Stat() (fs.FileInfo, error) {
-	return f.vfi, nil
+func (vf *VirtualFile) Stat() (fs.FileInfo, error) {
+	return &VirtualFileInfo{
+		name:    vf.name,
+		size:    int64(vf.Buffer.Len()),
+		modtime: vf.modtime,
+	}, nil
 }
 
-func (f *VirtualFile) Read(p []byte) (int, error) {
-	return f.buf.Read(p)
-}
-
-func (f *VirtualFile) Close() error {
+func (vf *VirtualFile) Close() error {
 	return nil
 }
