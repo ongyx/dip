@@ -37,7 +37,15 @@ func NewDirectory(path string) (Source, error) {
 }
 
 func (d *Directory) Open(path string) (fs.File, error) {
-	return d.fs.Open(path)
+	if path == Root {
+		path = "README.md"
+	}
+
+	if IsMarkdownFile(path) {
+		return d.fs.Open(path)
+	}
+
+	return nil, &fs.PathError{Op: "open", Path: path, Err: fs.ErrInvalid}
 }
 
 func (d *Directory) Watch(files chan<- string, errors chan<- error) {

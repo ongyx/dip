@@ -53,7 +53,7 @@ func (f *File) Open(path string) (fs.File, error) {
 		return nil, err
 	}
 
-	return os.Open(path)
+	return os.Open(f.path)
 }
 
 func (f *File) Watch(files chan<- string, errors chan<- error) {

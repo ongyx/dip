@@ -31,7 +31,7 @@ type Source interface {
 
 // New creates a source from the path.
 func New(path string) (Source, error) {
-	if u, err := url.Parse(path); err == nil {
+	if u, err := url.ParseRequestURI(path); err == nil {
 		return NewHTTP(u)
 	}
 

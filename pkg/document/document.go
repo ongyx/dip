@@ -21,6 +21,16 @@ func NewDocument(md goldmark.Markdown) *Document {
 	return &Document{md: md}
 }
 
+// Convert converts the Markdown text in buf into the document as HTML.
+func (d *Document) Convert(buf []byte) error {
+	d.mu.Lock()
+	defer d.mu.Unlock()
+
+	d.buf.Reset()
+
+	return d.md.Convert(buf, &d.buf)
+}
+
 // Borrow temporarily borrows the document's HTML for the lifetime of fn.
 // buf must not be mutated or used outside of fn.
 func (d *Document) Borrow(fn func(buf []byte) error) error {
@@ -32,9 +42,6 @@ func (d *Document) Borrow(fn func(buf []byte) error) error {
 
 // ReaderFrom reads Markdown text from the reader and converts it into the document as HTML.
 func (d *Document) ReadFrom(r io.Reader) (n int64, err error) {
-	d.mu.Lock()
-	defer d.mu.Unlock()
-
 	// TODO: perhaps persist this buffer for reading?
 	var buf bytes.Buffer
 
@@ -43,13 +50,7 @@ func (d *Document) ReadFrom(r io.Reader) (n int64, err error) {
 		return n, err
 	}
 
-	d.buf.Reset()
-
-	if err = d.md.Convert(buf.Bytes(), &d.buf); err != nil {
-		return n, err
-	}
-
-	return n, nil
+	return n, d.Convert(buf.Bytes())
 }
 
 // WriteTo writes the document's HTML to the writer.
