@@ -1,7 +1,9 @@
-package document
+package source
 
 import (
 	"io/fs"
+	"net/url"
+	"os"
 	"strings"
 )
 
@@ -25,6 +27,30 @@ type Source interface {
 
 	// Close performs cleanup on the source.
 	Close() error
+}
+
+// New creates a source from the path.
+func New(path string) (Source, error) {
+	if u, err := url.Parse(path); err == nil {
+		return NewHTTP(u)
+	}
+
+	// Read from standard input if given a dash.
+	if path == "-" {
+		return NewStdin()
+	}
+
+	stat, err := os.Stat(path)
+	if err != nil {
+		return nil, err
+	}
+
+	// Check if the path is a file or directory.
+	if stat.IsDir() {
+		return NewDirectory(path)
+	} else {
+		return NewFile(path)
+	}
 }
 
 // IsMarkdownFile checks if the path ends with a Markdown file extension.

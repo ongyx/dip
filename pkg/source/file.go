@@ -1,4 +1,4 @@
-package document
+package source
 
 import (
 	"io/fs"
@@ -8,7 +8,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-// File is a source that serves from a single file on the filesystem.
+// File is a source that serves a single file on the filesystem.
 type File struct {
 	path    string
 	watcher *fsnotify.Watcher

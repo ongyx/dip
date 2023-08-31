@@ -1,4 +1,4 @@
-package document
+package source
 
 import (
 	"io/fs"
@@ -8,7 +8,7 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
-// Directory is a source that serves from a directory on the filesystem.
+// Directory is a source that serves a directory on the filesystem.
 type Directory struct {
 	fs      fs.FS
 	path    string

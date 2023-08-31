@@ -1,4 +1,4 @@
-package document
+package source
 
 import (
 	"io/fs"
