@@ -1,7 +1,10 @@
 package source
 
 import (
+	"io"
+	"net/url"
 	"os"
+	"testing/fstest"
 )
 
 const (
@@ -10,17 +13,20 @@ const (
 
 // Stdin is a source that serves standard input.
 type Stdin struct {
-	*VirtualFS
+	fstest.MapFS
 }
 
 // NewStdin creates a new standard input source.
-func NewStdin() (Source, error) {
-	vf := NewVirtualFile(stdinFilename)
-
+func NewStdin(_ *url.URL) (Source, error) {
 	// This reads all data until the user presses Ctrl+D.
-	if _, err := vf.ReadFrom(os.Stdin); err != nil {
+	data, err := io.ReadAll(os.Stdin)
+	if err != nil {
 		return nil, err
 	}
 
-	return &Stdin{NewVirtualFS(vf)}, nil
+	return &Stdin{
+		MapFS: fstest.MapFS{
+			".": {Data: data},
+		},
+	}, nil
 }

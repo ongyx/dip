@@ -1,29 +1,33 @@
 package source
 
 import (
+	"io"
 	"net/http"
 	"net/url"
+	"testing/fstest"
 )
 
 // HTTP is a source that serves a URL.
 type HTTP struct {
-	*VirtualFS
+	fstest.MapFS
 }
 
 // NewHTTP creates a new source, downloading over HTTP(s) from the given URL.
 func NewHTTP(u *url.URL) (Source, error) {
-	url := u.String()
-	resp, err := http.Get(url)
+	resp, err := http.Get(u.String())
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
 
-	vf := NewVirtualFile(url)
-
-	if _, err := vf.ReadFrom(resp.Body); err != nil {
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
 		return nil, err
 	}
 
-	return &HTTP{NewVirtualFS(vf)}, nil
+	return &HTTP{
+		MapFS: fstest.MapFS{
+			".": {Data: data},
+		},
+	}, nil
 }

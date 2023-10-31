@@ -2,6 +2,7 @@ package source
 
 import (
 	"io/fs"
+	"net/url"
 	"os"
 	"path/filepath"
 
@@ -15,8 +16,8 @@ type File struct {
 }
 
 // NewFile creates a new file source.
-func NewFile(path string) (Source, error) {
-	path, err := filepath.Abs(path)
+func NewFile(u *url.URL) (Source, error) {
+	path, err := filepath.Abs(u.Path)
 	if err != nil {
 		return nil, err
 	}

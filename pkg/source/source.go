@@ -4,7 +4,6 @@ import (
 	"io/fs"
 	"net/url"
 	"os"
-	"strings"
 )
 
 const (
@@ -13,53 +12,48 @@ const (
 	Root = "."
 )
 
-var (
-	markdownExtensions = []string{".md", ".markdown"}
-)
-
 // Source is a filesystem serving Markdown files.
 type Source interface {
 	fs.FS
-
-	// Watch watches the filesystem for changed Markdown files and sends their paths.
-	// Any errors encountered when watching should be sent as well.
-	Watch(files chan<- string, errors chan<- error)
-
-	// Close performs cleanup on the source.
-	Close() error
 }
 
-// New creates a source from the path.
-func New(path string) (Source, error) {
+// New creates a source from the URL.
+func New(u *url.URL) (Source, error) {
+	return Get(u.Scheme)(u)
+}
+
+// Parse parses the path into a source.
+//
+// The path is parsed in order as follows:
+//
+// * If the path is already a URI, it is passed verbatim to New().
+//
+// * If the path is a dash ('-'), standard input is used.
+//
+// * Otherwise, stat the path to check if the path is a file or directory.
+func Parse(path string) (Source, error) {
 	if u, err := url.ParseRequestURI(path); err == nil {
-		return NewHTTP(u)
+		return New(u)
 	}
+
+	u := &url.URL{Path: path}
 
 	// Read from standard input if given a dash.
 	if path == "-" {
-		return NewStdin()
-	}
-
-	stat, err := os.Stat(path)
-	if err != nil {
-		return nil, err
-	}
-
-	// Check if the path is a file or directory.
-	if stat.IsDir() {
-		return NewDirectory(path)
+		u.Scheme = "stdin"
 	} else {
-		return NewFile(path)
-	}
-}
+		stat, err := os.Stat(path)
+		if err != nil {
+			return nil, err
+		}
 
-// IsMarkdownFile checks if the path ends with a Markdown file extension.
-func IsMarkdownFile(path string) bool {
-	for _, ext := range markdownExtensions {
-		if strings.HasSuffix(path, ext) {
-			return true
+		// Check if the path is a file or directory.
+		if stat.IsDir() {
+			u.Scheme = "dir"
+		} else {
+			u.Scheme = "file"
 		}
 	}
 
-	return false
+	return New(u)
 }

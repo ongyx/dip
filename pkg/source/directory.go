@@ -2,10 +2,15 @@ package source
 
 import (
 	"io/fs"
+	"net/url"
 	"os"
 	"path/filepath"
 
 	"github.com/fsnotify/fsnotify"
+)
+
+var (
+	markdownExtensions = []string{".md", ".markdown"}
 )
 
 // Directory is a source that serves a directory on the filesystem.
@@ -16,8 +21,8 @@ type Directory struct {
 }
 
 // NewDirectory creates a new directory source.
-func NewDirectory(path string) (Source, error) {
-	path, err := filepath.Abs(path)
+func NewDirectory(u *url.URL) (Source, error) {
+	path, err := filepath.Abs(u.Path)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +46,7 @@ func (d *Directory) Open(path string) (fs.File, error) {
 		path = "README.md"
 	}
 
-	if IsMarkdownFile(path) {
+	if isMarkdownFile(path) {
 		return d.fs.Open(path)
 	}
 
@@ -56,7 +61,7 @@ func (d *Directory) Watch(files chan<- string, errors chan<- error) {
 				return
 			}
 
-			if IsMarkdownFile(event.Name) && event.Has(fsnotify.Write) {
+			if isMarkdownFile(event.Name) && event.Has(fsnotify.Write) {
 				// SAFETY: event.Name is never outside of d.path
 				rel, err := filepath.Rel(d.path, event.Name)
 				if err != nil {
@@ -77,4 +82,16 @@ func (d *Directory) Watch(files chan<- string, errors chan<- error) {
 
 func (d *Directory) Close() error {
 	return d.watcher.Close()
+}
+
+func isMarkdownFile(path string) bool {
+	pathExt := filepath.Ext(path)
+
+	for _, ext := range markdownExtensions {
+		if pathExt == ext {
+			return true
+		}
+	}
+
+	return false
 }
