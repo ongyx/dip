@@ -14,6 +14,7 @@ import (
 	"golang.org/x/net/http2/h2c"
 
 	"github.com/ongyx/dip/pkg/document"
+	"github.com/ongyx/dip/pkg/source"
 )
 
 func main() {
@@ -30,12 +31,13 @@ func main() {
 		os.Exit(0)
 	}
 
-	library, err := document.NewLibraryFromPath(args.Path, nil)
+	src, err := source.Parse(args.Path)
 	if err != nil {
-		fmt.Printf("error: failed to create library - %s\n", err)
+		fmt.Printf("error: failed to get source for path %s - %s\n", args.Path, err)
 		os.Exit(1)
 	}
 
+	library := document.NewLibrary(src, nil)
 	server := document.NewServer(library, logger)
 
 	httpServer := &http.Server{Addr: args.Address, Handler: wrap(server)}

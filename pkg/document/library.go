@@ -46,16 +46,6 @@ func NewLibrary(src source.Source, md goldmark.Markdown) *Library {
 	}
 }
 
-// NewLibraryFromPath creates a new library by sourcing a path.
-func NewLibraryFromPath(path string, md goldmark.Markdown) (*Library, error) {
-	src, err := source.Parse(path)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewLibrary(src, md), nil
-}
-
 // Open reads the document at path.
 func (l *Library) Open(path string) (*Document, error) {
 	l.mu.RLock()

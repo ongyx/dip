@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "description": "Frontend JS for Dip.",
   "scripts": {
-    "build": "npx esbuild src/index.ts --bundle --minify --outdir=internal/asset/dist",
+    "build": "npx esbuild src/index.ts --bundle --minify --outdir=pkg/asset/dist",
     "serve": "go run ./cmd/dip",
     "fmt": "npx prettier --write . && go fmt ./..."
   },
