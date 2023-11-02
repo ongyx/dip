@@ -1,22 +1,5 @@
-import "./asset";
+import "./htmx";
 
-import { Handler } from "./handler";
-import { newMetadata } from "./metadata";
+import "htmx.org/dist/ext/sse.js";
 
-const main = () => {
-  const metadata = newMetadata();
-  if (metadata === null) {
-    console.log("error: failed to read document metadata");
-    return;
-  }
-
-  console.log(`connecting to SSE...`);
-
-  const handler = new Handler(metadata);
-
-  console.log(`SSE connected!`);
-
-  handler.listen();
-};
-
-window.onload = main;
+import "github-markdown-css/github-markdown.css";

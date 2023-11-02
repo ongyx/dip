@@ -3,19 +3,19 @@
   "version": "0.2.0",
   "description": "Frontend JS for Dip.",
   "scripts": {
-    "build": "npx esbuild src/index.ts --bundle --minify --outdir=pkg/asset/dist",
+    "build": "npx esbuild src/index.ts --bundle --minify --outdir=pkg/asset",
     "serve": "go run ./cmd/dip",
-    "fmt": "npx prettier --write . && go fmt ./..."
+    "buildserve": "npm run build && npm run serve"
   },
   "author": "Ong Yong Xin",
   "license": "ISC",
   "dependencies": {
-    "github-markdown-css": "^5.2.0",
-    "node-snackbar": "^0.1.16"
+    "htmx.org": "^1.9.6",
+    "github-markdown-css": "^5.2.0"
   },
   "devDependencies": {
-    "esbuild": "0.17.19",
-    "prettier": "2.8.8",
-    "typescript": "^5.1.3"
+    "esbuild": "^0.17.19",
+    "prettier": "^2.8.8",
+    "typescript": "^5.2.2"
   }
 }
