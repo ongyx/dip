@@ -31,9 +31,9 @@ func New(u *url.URL) (Source, error) {
 // * If the path is a dash ('-'), standard input is used.
 //
 // * Otherwise, stat the path to check if the path is a file or directory.
-func Parse(path string) (Source, error) {
+func Parse(path string) (*url.URL, error) {
 	if u, err := url.ParseRequestURI(path); err == nil {
-		return New(u)
+		return u, nil
 	}
 
 	u := &url.URL{Path: path}
@@ -55,5 +55,15 @@ func Parse(path string) (Source, error) {
 		}
 	}
 
-	return New(u)
+	return u, nil
+}
+
+// Must unwraps a (value, error) return to just the value.
+// If err is not nil, this panics.
+func Must[T any](t T, err error) T {
+	if err != nil {
+		panic(err)
+	}
+
+	return t
 }

@@ -6,7 +6,7 @@
 
     <title>{{.Title}} - dip</title>
 
-    <link rel="stylesheet" href="/{{.AssetPath}}/dist/index.css" />
+    <link rel="stylesheet" href="/{{.AssetURL}}/index.css" />
     <style>
       .markdown-body {
         box-sizing: border-box;
@@ -22,15 +22,13 @@
         }
       }
     </style>
-
-    <script id="metadata" type="application/json">
-      {{.Metadata}}
-    </script>
-
-    <script src="/{{.AssetPath}}/dist/index.js" defer></script>
+    
+    <script src="/{{.AssetURL}}/index.js" defer></script>
   </head>
 
   <body class="markdown-body">
-    <article id="content">{{.Content}}</article>
+    <article id="content" hx-ext="sse" sse-connect="/{{.EventURL}}" sse-swap="reload">
+      {{.Content}}
+    </article>
   </body>
 </html>

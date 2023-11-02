@@ -26,7 +26,7 @@ var (
 
 	args = &Args{
 		Path:    ".",
-		Address: ":8080",
+		Address: "localhost:8080",
 		Flags:   flag.CommandLine,
 	}
 )

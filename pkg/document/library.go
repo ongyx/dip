@@ -47,6 +47,7 @@ func NewLibrary(src source.Source, md goldmark.Markdown) *Library {
 }
 
 // Open reads the document at path.
+// If the document does not exist, ErrDocumentNotFound is returned.
 func (l *Library) Open(path string) (*Document, error) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()

@@ -7,7 +7,6 @@ import (
 	"os"
 	"os/signal"
 	"runtime/debug"
-	"strings"
 	"syscall"
 
 	"golang.org/x/net/http2"
@@ -31,25 +30,25 @@ func main() {
 		os.Exit(0)
 	}
 
-	src, err := source.Parse(args.Path)
+	u, err := source.Parse(args.Path)
 	if err != nil {
-		fmt.Printf("error: failed to get source for path %s - %s\n", args.Path, err)
+		fmt.Printf("error: could not parse path %s: %s\n", args.Path, err)
 		os.Exit(1)
 	}
 
-	library := document.NewLibrary(src, nil)
-	server := document.NewServer(library, logger)
+	srv, err := document.NewServer(u, nil, logger)
+	if err != nil {
+		fmt.Printf("error: failed to setup server: %s", err)
+		os.Exit(1)
+	}
 
-	httpServer := &http.Server{Addr: args.Address, Handler: wrap(server)}
+	// Pass address verbatim to http.Server.
+	server := &http.Server{Addr: args.Address, Handler: wrap(srv)}
 	go func() {
-		if err := httpServer.ListenAndServe(); err != http.ErrServerClosed {
+		if err := server.ListenAndServe(); err != http.ErrServerClosed {
 			fmt.Printf("error: listen: %s\n", err)
 		}
 	}()
-
-	if strings.HasPrefix(args.Address, ":") {
-		args.Address = "localhost" + args.Address
-	}
 
 	fmt.Printf("serving %s at http://%s\n", args.Path, args.Address)
 
@@ -58,7 +57,7 @@ func main() {
 
 	fmt.Println("shutting down...")
 
-	if err := httpServer.Shutdown(context.Background()); err != nil {
+	if err := server.Shutdown(context.Background()); err != nil {
 		fmt.Printf("error: shutdown: %s\n", err)
 	}
 }
