@@ -68,6 +68,7 @@ func (l *Library) Create(path string) (*Document, error) {
 	d, ok := l.docs[path]
 	if !ok {
 		d = NewDocument(l.md)
+		l.docs[path] = d
 	}
 
 	b, err := fs.ReadFile(l.src, path)
@@ -90,4 +91,11 @@ func (l *Library) Remove(path string) error {
 
 	delete(l.docs, path)
 	return nil
+}
+
+// Watcher returns the library's source as a Watcher.
+// If the source does not support file watching, ok is false.
+func (l *Library) Watcher() (w source.Watcher, ok bool) {
+	w, ok = l.src.(source.Watcher)
+	return
 }
