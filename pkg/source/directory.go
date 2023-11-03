@@ -10,6 +10,9 @@ import (
 )
 
 var (
+	// Interface check.
+	_ Watcher = &Directory{}
+
 	markdownExtensions = []string{".md", ".markdown"}
 )
 
@@ -53,14 +56,11 @@ func (d *Directory) Open(path string) (fs.File, error) {
 	return nil, &fs.PathError{Op: "open", Path: path, Err: fs.ErrInvalid}
 }
 
-func (d *Directory) Watch(files chan<- string, errors chan<- error) {
-	for {
-		select {
-		case event, ok := <-d.watcher.Events:
-			if !ok {
-				return
-			}
+func (d *Directory) Watch() (<-chan string, <-chan error) {
+	files := make(chan string)
 
+	go func() {
+		for event := range d.watcher.Events {
 			if isMarkdownFile(event.Name) && event.Has(fsnotify.Write) {
 				// SAFETY: event.Name is never outside of d.path
 				rel, err := filepath.Rel(d.path, event.Name)
@@ -70,14 +70,12 @@ func (d *Directory) Watch(files chan<- string, errors chan<- error) {
 
 				files <- rel
 			}
-		case err, ok := <-d.watcher.Errors:
-			if !ok {
-				return
-			}
-
-			errors <- err
 		}
-	}
+
+		close(files)
+	}()
+
+	return files, d.watcher.Errors
 }
 
 func (d *Directory) Close() error {

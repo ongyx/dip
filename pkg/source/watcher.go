@@ -4,10 +4,13 @@ package source
 type Watcher interface {
 	Source
 
-	// Watch watches the filesystem for changed Markdown files and sends their paths.
-	// Any errors encountered when watching should be sent as well.
-	Watch(files chan<- string, errors chan<- error)
+	// Watch starts watching the source for Markdown file changes,
+	// sending them over the files channel.
+	// Any error encountered should be sent over the errors channel.
+	//
+	// When the watcher is closed, both returned channels should be closed.
+	Watch() (files <-chan string, errors <-chan error)
 
-	// Close performs cleanup on the source.
+	// Close closes the watcher.
 	Close() error
 }

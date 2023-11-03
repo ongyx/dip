@@ -9,6 +9,11 @@ import (
 	"github.com/fsnotify/fsnotify"
 )
 
+var (
+	// Interface check.
+	_ Watcher = &File{}
+)
+
 // File is a source that serves a single file on the filesystem.
 type File struct {
 	path    string
@@ -57,26 +62,21 @@ func (f *File) Open(path string) (fs.File, error) {
 	return os.Open(f.path)
 }
 
-func (f *File) Watch(files chan<- string, errors chan<- error) {
-	for {
-		select {
-		case event, ok := <-f.watcher.Events:
-			if !ok {
-				return
-			}
+func (f *File) Watch() (<-chan string, <-chan error) {
+	files := make(chan string)
 
+	go func() {
+		defer close(files)
+
+		for event := range f.watcher.Events {
 			// Reload the file only if it's being written to.
 			if event.Name == f.path && event.Has(fsnotify.Write) {
 				files <- Root
 			}
-		case err, ok := <-f.watcher.Errors:
-			if !ok {
-				return
-			}
-
-			errors <- err
 		}
-	}
+	}()
+
+	return files, f.watcher.Errors
 }
 
 func (f *File) Close() error {
