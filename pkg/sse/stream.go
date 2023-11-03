@@ -3,21 +3,13 @@ package sse
 import (
 	"bytes"
 	"context"
-	"errors"
 	"net/http"
 	"sync"
-)
-
-var (
-	// ErrSSENotSupported indicates the client does not support stream-sent events.
-	ErrSSENotSupported = errors.New("client does not support SSE")
 )
 
 // Stream represents an event stream with several clients.
 // Any errors encountered are sent over the Errors channel.
 type Stream struct {
-	Errors chan error
-
 	events chan *Event
 
 	mu      sync.RWMutex
@@ -27,13 +19,12 @@ type Stream struct {
 // Stream creates a new stream.
 func NewStream() *Stream {
 	s := &Stream{
-		Errors:  make(chan error),
 		events:  make(chan *Event),
 		clients: make(map[context.Context]chan []byte),
 	}
 
 	go func() {
-		// Cache for marshalling events
+		// Cache for marshalling events.
 		var buf bytes.Buffer
 
 		for e := range s.events {
@@ -54,23 +45,27 @@ func (s *Stream) Send(e *Event) {
 func (s *Stream) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	c, ok := w.(Client)
 	if !ok {
-		s.Errors <- &Error{error: ErrSSENotSupported, Request: r}
+		http.Error(w, "SSE not supported", http.StatusInternalServerError)
+		return
 	}
 
+	// Prepare headers for SSE streaming.
+	// See https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events.
 	h := c.Header()
 	h.Set("Content-Type", "text/event-stream")
 	h.Set("Cache-Control", "no-cache")
 
+	// Create a channel to receive marshaled events from and add the client to the pool.
 	marshaled := make(chan []byte)
-
 	s.clients[r.Context()] = marshaled
 
+	// Signal to the client that connection setup is complete.
+	c.WriteHeader(http.StatusOK)
+	c.Flush()
+
 	for m := range marshaled {
-		if _, err := c.Write(m); err != nil {
-			s.Errors <- err
-		} else {
-			c.Flush()
-		}
+		c.Write(m)
+		c.Flush()
 	}
 }
 
@@ -83,8 +78,6 @@ func (s *Stream) Close() {
 	for _, ev := range s.clients {
 		close(ev)
 	}
-
-	close(s.Errors)
 }
 
 func (s *Stream) send(e *Event, buf *bytes.Buffer) {
@@ -97,7 +90,7 @@ func (s *Stream) send(e *Event, buf *bytes.Buffer) {
 	for ctx, marshaled := range s.clients {
 		select {
 		case <-ctx.Done():
-			// client disconnected, so remove them.
+			// Client disconnected, so remove them.
 			delete(s.clients, ctx)
 
 		default:
