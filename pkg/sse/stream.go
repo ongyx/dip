@@ -16,7 +16,7 @@ type Stream struct {
 	clients map[context.Context]chan []byte
 }
 
-// Stream creates a new stream.
+// NewStream creates a new stream.
 func NewStream() *Stream {
 	s := &Stream{
 		events:  make(chan *Event),
@@ -41,9 +41,9 @@ func (s *Stream) Send(e *Event) {
 }
 
 // ServeHTTP connects a client to the stream and waits for sent events.
-// If the client does not support SSE, sse.Error is sent over the error channel with ErrSSENotSupported.
+// If the client does not support SSE, a 500 status code will be sent.
 func (s *Stream) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c, ok := w.(Client)
+	f, ok := w.(http.Flusher)
 	if !ok {
 		http.Error(w, "SSE not supported", http.StatusInternalServerError)
 		return
@@ -51,7 +51,7 @@ func (s *Stream) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	// Prepare headers for SSE streaming.
 	// See https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events/Using_server-sent_events.
-	h := c.Header()
+	h := w.Header()
 	h.Set("Content-Type", "text/event-stream")
 	h.Set("Cache-Control", "no-cache")
 
@@ -60,12 +60,12 @@ func (s *Stream) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.clients[r.Context()] = marshaled
 
 	// Signal to the client that connection setup is complete.
-	c.WriteHeader(http.StatusOK)
-	c.Flush()
+	w.WriteHeader(http.StatusOK)
+	f.Flush()
 
 	for m := range marshaled {
-		c.Write(m)
-		c.Flush()
+		w.Write(m)
+		f.Flush()
 	}
 }
 
