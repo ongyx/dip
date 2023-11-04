@@ -57,6 +57,8 @@ func main() {
 
 	fmt.Println("shutting down...")
 
+	srv.Close()
+
 	if err := server.Shutdown(context.Background()); err != nil {
 		fmt.Printf("error: shutdown: %s\n", err)
 	}

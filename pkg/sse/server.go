@@ -1,11 +1,16 @@
 package sse
 
-import "net/http"
+import (
+	"net/http"
+	"sync"
+)
 
 // Server is a stream multiplexer, allowing clients to receive events from a specific stream.
 type Server struct {
 	defaultStream string
-	streams       map[string]*Stream
+
+	mu      sync.RWMutex
+	streams map[string]*Stream
 }
 
 // NewServer creates a new server.
@@ -27,6 +32,9 @@ func NewServer(defaultStream string) *Server {
 // Add creates a new stream in the server.
 // If the stream already exists, the existing one is returned.
 func (s *Server) Add(name string) *Stream {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if st, ok := s.streams[name]; ok {
 		return st
 	}
@@ -40,12 +48,18 @@ func (s *Server) Add(name string) *Stream {
 // Get returns an existing stream by name in the server.
 // If the stream does not exist, nil is returned.
 func (s *Server) Get(name string) *Stream {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
 	return s.streams[name]
 }
 
 // Remove deletes the stream by name from the server and closes it.
 // If the stream does not exist, this is a no-op.
 func (s *Server) Remove(name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	if st, ok := s.streams[name]; ok {
 		st.Close()
 		delete(s.streams, name)
@@ -62,6 +76,13 @@ func (s *Server) Send(name string, e *Event) {
 	}
 
 	st.Send(e)
+}
+
+// Close closes all server streams.
+func (s *Server) Close() {
+	for _, st := range s.streams {
+		st.Close()
+	}
 }
 
 // ServeHTTP connects a client to a stream in the server depending on the 'stream' query parameter.

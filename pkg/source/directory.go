@@ -45,10 +45,6 @@ func NewDirectory(u *url.URL) (Source, error) {
 }
 
 func (d *Directory) Open(path string) (fs.File, error) {
-	if path == Root {
-		path = "README.md"
-	}
-
 	if isMarkdownFile(path) {
 		return d.fs.Open(path)
 	}
