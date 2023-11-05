@@ -38,7 +38,7 @@ func main() {
 
 	srv, err := document.NewServer(u, nil, logger)
 	if err != nil {
-		fmt.Printf("error: failed to setup server: %s", err)
+		fmt.Println("error: failed to setup server:", err)
 		os.Exit(1)
 	}
 
@@ -46,7 +46,7 @@ func main() {
 	server := &http.Server{Addr: args.Address, Handler: wrap(srv)}
 	go func() {
 		if err := server.ListenAndServe(); err != http.ErrServerClosed {
-			fmt.Printf("error: listen: %s\n", err)
+			fmt.Println("error: listener:", err)
 		}
 	}()
 
@@ -60,7 +60,7 @@ func main() {
 	srv.Close()
 
 	if err := server.Shutdown(context.Background()); err != nil {
-		fmt.Printf("error: shutdown: %s\n", err)
+		fmt.Println("error: shutdown:", err)
 	}
 }
 

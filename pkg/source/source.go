@@ -1,6 +1,7 @@
 package source
 
 import (
+	"errors"
 	"io/fs"
 	"net/url"
 	"os"
@@ -8,8 +9,13 @@ import (
 
 const (
 	// Root represents the root document path in a source.
-	// Certain sources only serve a single Markdown file and thus may check for this value to serve that file.
+	// Certain sources only serve a single Markdown file and may check for this value to serve that file.
 	Root = "."
+)
+
+var (
+	// ErrSourceNotFound means that a source for the URL scheme was not found.
+	ErrSourceNotFound = errors.New("source schema not found")
 )
 
 // Source is a filesystem serving Markdown files.
@@ -18,8 +24,13 @@ type Source interface {
 }
 
 // New creates a source from the URL.
+// If the source for the URL scheme does not exist, ErrSourceNotFound is returned.
 func New(u *url.URL) (Source, error) {
-	return Get(u.Scheme)(u)
+	if s := Get(u.Scheme); s != nil {
+		return s(u)
+	}
+
+	return nil, ErrSourceNotFound
 }
 
 // Parse parses the path into a source.

@@ -13,6 +13,7 @@ func init() {
 	Register("dir", NewDirectory)
 	Register("file", NewFile)
 	Register("http", NewHTTP)
+	Register("https", NewHTTP)
 	Register("stdin", NewStdin)
 }
 
