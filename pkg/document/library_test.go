@@ -20,8 +20,8 @@ var (
 func TestLibraryOpen(t *testing.T) {
 	l := NewLibrary(files, converter)
 
-	if _, err := l.Open(readme); err != ErrDocumentNotFound {
-		t.Error("expected ErrDocumentNotFound for opening before creation")
+	if _, ok := l.Open(readme); ok {
+		t.Error("expected document to be non-existent")
 	}
 
 	_, err := l.Create(readme)
@@ -29,16 +29,16 @@ func TestLibraryOpen(t *testing.T) {
 		t.Error("failed to create README.md")
 	}
 
-	if _, err := l.Open(readme); err != nil {
-		t.Errorf("expected opening to succeed, got %s\n", err)
+	if _, ok := l.Open(readme); !ok {
+		t.Error("expected opening to succeed")
 	}
 }
 
 func TestLibraryRemove(t *testing.T) {
 	l := NewLibrary(files, converter)
 
-	if err := l.Remove(readme); err != ErrDocumentNotFound {
-		t.Error("expected ErrDocumentNotFound for removal before creation")
+	if l.Remove(readme) {
+		t.Error("expected document to be non-existent")
 	}
 
 	_, err := l.Create(readme)
@@ -46,7 +46,7 @@ func TestLibraryRemove(t *testing.T) {
 		t.Error("failed to create README.md")
 	}
 
-	if err := l.Remove(readme); err != nil {
-		t.Errorf("expected removal to succeed, got %s\n", err)
+	if !l.Remove(readme) {
+		t.Error("expected removal to succeed")
 	}
 }

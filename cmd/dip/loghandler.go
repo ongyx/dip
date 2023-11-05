@@ -18,5 +18,5 @@ type LogHandler struct {
 func (l *LogHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	l.handler.ServeHTTP(w, r)
 
-	l.logger.Printf(`%s "%s %s %s"`, r.RemoteAddr, r.Method, r.URL.Path, r.Proto)
+	l.logger.Printf("%s \"%s %s %s\"\n", r.RemoteAddr, r.Method, r.URL.Path, r.Proto)
 }

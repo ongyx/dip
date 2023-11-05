@@ -27,7 +27,7 @@ func NewHTTP(u *url.URL) (Source, error) {
 
 	return &HTTP{
 		MapFS: fstest.MapFS{
-			".": {Data: data},
+			Root: {Data: data},
 		},
 	}, nil
 }

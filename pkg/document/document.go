@@ -10,15 +10,21 @@ import (
 
 // Document is a HTML representation of Markdown text.
 type Document struct {
-	md goldmark.Markdown
+	name string
+	md   goldmark.Markdown
 
 	mu  sync.RWMutex
 	buf bytes.Buffer
 }
 
-// NewDocument creates a new document with the given Markdown converter.
-func NewDocument(md goldmark.Markdown) *Document {
-	return &Document{md: md}
+// NewDocument creates a new document with the given name and Markdown converter.
+func NewDocument(name string, md goldmark.Markdown) *Document {
+	return &Document{name: name, md: md}
+}
+
+// Name returns the document's name.
+func (d *Document) Name() string {
+	return d.name
 }
 
 // Convert converts the Markdown text in buf into the document as HTML.

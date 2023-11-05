@@ -27,7 +27,7 @@ func NewStdin(_ *url.URL) (Source, error) {
 
 	return &Stdin{
 		MapFS: fstest.MapFS{
-			".": {Data: data},
+			Root: {Data: data},
 		},
 	}, nil
 }

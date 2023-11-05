@@ -11,7 +11,7 @@ var (
 )
 
 func TestDocumentConvert(t *testing.T) {
-	d := NewDocument(converter)
+	d := NewDocument("", converter)
 
 	if err := d.Convert([]byte("# Hello World!")); err != nil {
 		t.Error("failed to convert: ", err)

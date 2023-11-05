@@ -30,17 +30,22 @@ func main() {
 		os.Exit(0)
 	}
 
+	if args.Path == "-" {
+		fmt.Println("Type some Markdown below and press Ctrl-D (or Ctrl-Z + Enter on Windows).")
+	}
+
 	u, err := source.Parse(args.Path)
 	if err != nil {
 		fmt.Printf("error: could not parse path %s: %s\n", args.Path, err)
 		os.Exit(1)
 	}
 
-	srv, err := document.NewServer(u, nil, logger)
+	srv, err := document.NewServer(u, nil)
 	if err != nil {
 		fmt.Println("error: failed to setup server:", err)
 		os.Exit(1)
 	}
+	srv.SetLogger(logger)
 
 	// Pass address verbatim to http.Server.
 	server := &http.Server{Addr: args.Address, Handler: wrap(srv)}

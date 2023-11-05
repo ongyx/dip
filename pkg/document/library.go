@@ -1,7 +1,6 @@
 package document
 
 import (
-	"errors"
 	"io/fs"
 	"sync"
 
@@ -18,9 +17,6 @@ var (
 		goldmark.WithExtensions(extension.GFM),
 		goldmark.WithParserOptions(parser.WithAutoHeadingID()),
 	)
-
-	// ErrDocumentNotFound means that a document could not be found in a library.
-	ErrDocumentNotFound = errors.New("document not found")
 )
 
 // Library is a collection of Markdown documents.
@@ -46,32 +42,29 @@ func NewLibrary(src source.Source, md goldmark.Markdown) *Library {
 	}
 }
 
-// Open reads the document at path.
-// If the document does not exist, ErrDocumentNotFound is returned.
-func (l *Library) Open(path string) (*Document, error) {
+// Open reads the document with name.
+// If the document does not exist, ok is false.
+func (l *Library) Open(name string) (d *Document, ok bool) {
 	l.mu.RLock()
 	defer l.mu.RUnlock()
 
-	if d, ok := l.docs[path]; ok {
-		return d, nil
-	}
-
-	return nil, ErrDocumentNotFound
+	d, ok = l.docs[name]
+	return
 }
 
 // Create reads a document from the library's source.
 // If the document exists, the existing document's content is reloaded.
-func (l *Library) Create(path string) (*Document, error) {
+func (l *Library) Create(name string) (*Document, error) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	d, ok := l.docs[path]
+	d, ok := l.docs[name]
 	if !ok {
-		d = NewDocument(l.md)
-		l.docs[path] = d
+		d = NewDocument(name, l.md)
+		l.docs[name] = d
 	}
 
-	b, err := fs.ReadFile(l.src, path)
+	b, err := fs.ReadFile(l.src, name)
 	if err != nil {
 		return nil, err
 	}
@@ -80,17 +73,17 @@ func (l *Library) Create(path string) (*Document, error) {
 }
 
 // Remove deletes a document from the library.
-// If the document does not exist, ErrDocumentNotFound is returned.
-func (l *Library) Remove(path string) error {
+// If the document does not exist, ok is false.
+func (l *Library) Remove(name string) (ok bool) {
 	l.mu.Lock()
 	defer l.mu.Unlock()
 
-	if _, ok := l.docs[path]; !ok {
-		return ErrDocumentNotFound
+	_, ok = l.docs[name]
+	if ok {
+		delete(l.docs, name)
 	}
 
-	delete(l.docs, path)
-	return nil
+	return ok
 }
 
 // Watcher returns the library's source as a Watcher.
