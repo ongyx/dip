@@ -22,3 +22,6 @@ go.work
 
 # Node.js modules
 node_modules
+
+# Bun lockfile
+bun.lockb
